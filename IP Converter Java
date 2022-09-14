@@ -1,0 +1,463 @@
+//IPAddressing
+
+import java.util.ArrayList;
+import java.util.Scanner;
+
+/*
+* This program performs IP addressing
+* The inputs are networkIP, firstIP, lastIP, broadcastIP addresses,and number of hosts
+* then, classify given addresses by classes, calculating the IPs, display them
+* This program also works for subnetting IP addressing
+* */
+
+public class IP_addressing {
+   // importing another classes
+   static Sort sort = new Sort();
+   static Log log = new Log();
+   static Display display = new Display();
+
+   public static ArrayList<String> networkFinal = new ArrayList();
+   public static ArrayList<String> firstIPFinal = new ArrayList();
+   public static ArrayList<String> lastIPFinal = new ArrayList();
+   public static ArrayList<String> broadcastFinal = new ArrayList();
+   public static ArrayList<Integer> subnetMask = new ArrayList();
+
+   private static ArrayList<Integer> network = new ArrayList();
+   private static ArrayList<Integer> firstIP = new ArrayList();
+   private static ArrayList<Integer> lastIP = new ArrayList();
+   private static ArrayList<Integer> broadcast = new ArrayList();
+   private static ArrayList<Integer> numberOfHosts = new ArrayList();
+   private static ArrayList<Integer> numberOfBits = new ArrayList();
+
+   private static int numberOfGroups = 0;
+
+   public static void main(String args[])
+   {
+       // initializing variables
+       int totalHosts = 0;
+       char networkClass = 'A';
+       int firstByte = 1;
+       int secondByte = 2;
+       int thirdByte = 3;
+
+       Scanner in = new Scanner(System.in);
+
+       // Ask the user for number of groups
+       do {
+           System.out.println("What is the number of groups?");
+       } while(in.hasNextInt() == false && in.nextLine() != "What is the number of groups");
+       numberOfGroups = in.nextInt();
+
+       // Ask the user the number of maximum hosts for each of the groups
+       // and storing them to numberOfHosts arraylist
+       for(int i = 0; i < numberOfGroups; i++) {
+           do {
+               System.out.println("What is the number of maximum hosts?");
+           } while (in.hasNextInt() == false && in.nextLine() != "What is the number of maximum hosts?");
+           numberOfHosts.add(i, in.nextInt());
+       }
+
+       // Initializing values in arraylist depending on number of groups
+       for(int i = 0; i < 4*numberOfGroups; i++) {
+           network.add(i, 0);
+           firstIP.add(i, 0);
+           lastIP.add(i, 0);
+           broadcast.add(i, 0);
+       }
+
+       // sorting number of hosts in descending order
+       sort.InsertionSort(numberOfHosts);
+
+       // calculates number of bits needed for each group
+       // and also calculates subnet mask for each group
+       for(int i = 0; i < numberOfGroups; i++) {
+           numberOfBits.add(i, log.getLog(2, numberOfHosts.get(i) + 2));  // 2 is added since network address and broadcast address must be reserved
+           subnetMask.add(i, 32 - numberOfBits.get(i));
+       }
+
+       // calculates total number of bits that need to be reserved
+       // depending on number of hosts for each group
+       for(int i = 0; i < numberOfGroups; i++) {
+           totalHosts += Math.pow(2, numberOfBits.get(i));
+       }
+       System.out.println("hosts: " + totalHosts);
+
+       // determines the class depending on total number of hosts
+       if(numberOfBits.get(0) < 1) {        // since the arraylist is sorted in descending order, here if the largest host is 0
+           System.out.println("not valid");
+       }
+       //Class C
+       else if(totalHosts < Math.pow(2, 8)) {
+           networkClass = 'C';
+           System.out.println("Class: C");
+
+           // asking for first 3 byte since only the last byte will be different for class C
+           do {System.out.println("first byte: ");}
+           while(in.hasNextInt() == false);
+           firstByte = in.nextInt();
+
+           do {System.out.println("second byte: ");}
+           while(in.hasNextInt() == false);
+           secondByte = in.nextInt();
+
+           do {System.out.println("third byte: ");}
+           while(in.hasNextInt() == false);
+           thirdByte = in.nextInt();
+
+           // setting first 3 bytes for network address, first and last IP address, and broadcast address
+           for(int i = 0; i < 4*numberOfGroups; i = i + 4) {
+               network.set(i, firstByte);
+               network.set(i+1, secondByte);
+               network.set(i+2, thirdByte);
+
+               firstIP.set(i, firstByte);
+               firstIP.set(i+1, secondByte);
+               firstIP.set(i+2, thirdByte);
+
+               lastIP.set(i, firstByte);
+               lastIP.set(i+1, secondByte);
+               lastIP.set(i+2, thirdByte);
+
+               broadcast.set(i, firstByte);
+               broadcast.set(i+1, secondByte);
+               broadcast.set(i+2, thirdByte);
+           }
+       }
+       //Class B
+       else if(totalHosts < Math.pow(2, 16)) {
+           networkClass = 'B';
+           System.out.println("Class: B");
+
+           do {System.out.println("first byte: ");}
+           while(in.hasNextInt() == false);
+           firstByte = in.nextInt();
+
+           do {System.out.println("second byte: ");}
+           while(in.hasNextInt() == false);
+           secondByte = in.nextInt();
+
+           for(int i = 0; i < 4*numberOfGroups; i = i + 4) {
+               network.set(i, firstByte);
+               network.set(i+1, secondByte);
+
+               firstIP.set(i, firstByte);
+               firstIP.set(i+1, secondByte);
+
+               lastIP.set(i, firstByte);
+               lastIP.set(i+1, secondByte);
+
+               broadcast.set(i, firstByte);
+               broadcast.set(i+1, secondByte);
+           }
+       }
+       //Class A
+       else if(totalHosts < Math.pow(2, 24)) {
+           networkClass = 'A';
+           System.out.println("Class: A");
+
+           do {System.out.println("first byte: ");}
+           while(in.hasNextInt() == false);
+           firstByte = in.nextInt();
+
+           for(int i = 0; i < 4*numberOfGroups; i = i + 4) {
+               network.set(i, firstByte);
+               firstIP.set(i, firstByte);
+               lastIP.set(i, firstByte);
+               broadcast.set(i, firstByte);
+           }
+       }
+       //Too many hosts
+       else {
+           System.out.println("too many hosts");
+           return;
+       }
+
+       // calculates network address for each group based on number of hosts in previous group
+       for (int i = 0; i < numberOfGroups; i++) {
+           if(networkClass == 'A') {
+               network.set(4*i + 1, (int) ((Math.pow(2,(numberOfBits.get(i-1))) + network.get(4*(i-1) + 1))/(Math.pow(2,16))));  //second byte
+               network.set(4*i + 2, (int) (((Math.pow(2,(numberOfBits.get(i-1))) + network.get(4*(i-1) + 1))%(Math.pow(2,16)))/(Math.pow(2, 8))));  //third byte
+               network.set(4*i + 3, (int) ((Math.pow(2,(numberOfBits.get(i-1))) + network.get(4*(i-1) + 1))%(Math.pow(2, 8))));  //forth byte
+           }
+           else if(networkClass == 'B') {
+               network.set(4*i + 2, (int) ((Math.pow(2,(numberOfBits.get(i-1))) + Math.pow(2, 8)*network.get(4*(i-1) + 2) + network.get(4*(i-1) + 3))/(Math.pow(2, 8))));  //third byte
+               network.set(4*i + 3, (int) ((Math.pow(2,(numberOfBits.get(i-1))) + Math.pow(2, 8)*network.get(4*(i-1) + 2) + network.get(4*(i-1) + 3))%(Math.pow(2, 8))));  //forth byte
+           }
+           else if(networkClass == 'C') {
+               network.set(4*i + 3, (int) Math.pow(2,(numberOfBits.get(i-1))) + network.get(4*(i-1) + 3));  //forth byte
+           }
+       }
+
+       // calculates broadcast address for each group
+       // based on number of hosts in that group and network address for that group
+       for(int i = 0; i < numberOfGroups; i++) {
+           if(networkClass == 'A') {
+               broadcast.set(4*i + 1, (int) ((Math.pow(2,(numberOfBits.get(i))) + Math.pow(2, 16)*network.get(4*i + 1) - 1)/(Math.pow(2, 16))));  //second byte
+               broadcast.set(4*i + 2, (int) (((Math.pow(2,(numberOfBits.get(i))) + Math.pow(2, 8)*network.get(4*i + 1) - 1)%(Math.pow(2,16)))/(Math.pow(2, 8))));  //third byte
+               broadcast.set(4*i + 3, (int) ((Math.pow(2,(numberOfBits.get(i))) + network.get(4*i + 1) - 1)%(Math.pow(2, 8)))); //forth byte
+           }
+           else if(networkClass == 'B') {
+               broadcast.set(4*i + 2, (int) ((Math.pow(2,(numberOfBits.get(i))) + Math.pow(2, 8)*network.get(4*i + 2) - 1)/(Math.pow(2, 8))));  //third byte
+               broadcast.set(4*i + 3, (int) ((Math.pow(2,(numberOfBits.get(i))) + network.get(4*i + 3) - 1)%(Math.pow(2, 8))));  //forth byte
+           }
+           else if(networkClass == 'C') {
+               broadcast.set(4*i + 3, (int) ((Math.pow(2,(numberOfBits.get(i))) + network.get(4*i + 3) - 1)%(Math.pow(2, 8))));  //forth byte
+           }
+       }
+
+       // calculates first IP based on network address of the group
+       // and also calculates last IP based on broadcast address of the group
+       for (int i = 0; i < numberOfGroups; i++) {
+           for(int j = 0; j < 3; j++) {
+               firstIP.set(4*i + j, network.get(4*i + j));
+               lastIP.set(4*i + j, broadcast.get(4*i + j));
+           }
+           firstIP.set(4*i + 3, network.get(4*i + 3) + 1);
+           lastIP.set(4*i + 3, broadcast.get(4*i + 3) - 1);
+       }
+
+       //Create JFrame to display the results
+       finalize_1();
+       setDisplay();
+
+       // prints out the result
+       for(int i = 0; i < numberOfGroups; i++) {
+           System.out.print("Subnet Number: " + i);
+           System.out.print("  network address: ");
+           for(int j = 0; j < 4; j++) {
+               System.out.print(network.get(4*i+j));
+               System.out.print(".");
+           }
+           System.out.print("  first IP address: ");
+           for(int j = 0; j < 4; j++) {
+               System.out.print(firstIP.get(4*i+j));
+               System.out.print(".");
+           }
+           System.out.print("  last IP address: ");
+           for(int j = 0; j < 4; j++) {
+               System.out.print(lastIP.get(4*i+j));
+               System.out.print(".");
+           }
+           System.out.print("  broadcast address: ");
+           for(int j = 0; j < 4; j++) {
+               System.out.print(broadcast.get(4*i+j));
+               System.out.print(".");
+           }
+           System.out.print("  subnet mask: " + subnetMask.get(i));
+           System.out.println("");
+       }
+   }
+
+   /**
+    * finalize_1() finalizes the result of IP addresses by loading IP addresses into strings type variables
+    * */
+   public static void finalize_1() {
+       for(int i = 0; i < numberOfGroups; i++) {
+           String networkStr = "";
+           String firstIPStr = "";
+           String lastIPStr = "";
+           String broadcastStr = "";
+           for(int j = 0; j < 4; j++) {
+               networkStr = networkStr + String.valueOf(network.get(j));
+               firstIPStr = firstIPStr + String.valueOf(firstIP.get(j));
+               lastIPStr = lastIPStr + String.valueOf(lastIP.get(j));
+               broadcastStr = broadcastStr + String.valueOf(broadcast.get(j));
+               if(j != 3) {
+                   networkStr = networkStr + ".";
+                   firstIPStr = firstIPStr + ".";
+                   lastIPStr = lastIPStr + ".";
+                   broadcastStr = broadcastStr + ".";
+               }
+           }
+           networkFinal.add(i, networkStr);
+           firstIPFinal.add(i, firstIPStr);
+           lastIPFinal.add(i, lastIPStr);
+           broadcastFinal.add(i, broadcastStr);
+       }
+   }
+
+   /**
+    * setDisplay() sets finalized results into JFrame
+    * */
+   public static void setDisplay() {
+       for(int i = 0; i < numberOfGroups; i++) {
+           display.subnetNumber.addItem(i);
+       }
+       display.network.setText(networkFinal.get(0));
+       display.firstIP.setText(firstIPFinal.get(0));
+       display.lastIP.setText(lastIPFinal.get(0));
+       display.broadcast.setText(broadcastFinal.get(0));
+
+       display.frame.setVisible(true);
+   }
+}
+
+//Sort
+
+import java.util.ArrayList;
+
+
+public class Sort {
+   /**
+    * InsertionSort(ArrayList<Integer> A) sorts an arraylist by insertion sorting
+    * @param A - an arraylist containing numbers of hosts for each subnet
+    * */
+   public void InsertionSort(ArrayList<Integer> A) {
+       int temp;
+       int j;
+       for (int i = 1; i < A.size(); i++) {
+           temp = A.get(i);
+           j = i-1;
+           while(j >= 0 && A.get(j) < temp) {
+               A.set(j+1, A.get(j));
+               j--;
+           }
+           A.set(j+1, temp);
+       }
+   }
+}
+
+//Log
+
+public class Log {
+
+   /**
+    *getLog() operates logarithmic calculation
+    * @param base base number
+    * @param x value
+    * */
+   public int getLog(int base, int x) {
+       return (int) Math.ceil(Math.log(x)/Math.log(base));
+   }
+}
+
+//Display  
+
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JTextField;
+import javax.swing.JLabel;
+import java.awt.Font;
+import java.util.ArrayList;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.SwingConstants;
+
+public class Display {
+   // importing another class
+   IP_addressing ipAddressing = new IP_addressing();
+
+   public JFrame frame;
+   public JTextField network;
+   public JTextField firstIP;
+   public JTextField lastIP;
+   public JTextField broadcast;
+   public JTextField subnetMask;
+
+   public JComboBox subnetNumber;
+
+   /**
+    * Display() Constructor
+    */
+   public Display() {
+       initialize();
+   }
+
+   /**
+    * initialize() initializes the contents of the frame
+    */
+   private void initialize() {
+       frame = new JFrame();
+       frame.setBounds(100, 300, 1000, 150);
+       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+       frame.getContentPane().setLayout(null);
+
+       subnetNumber = new JComboBox();
+       subnetNumber.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       subnetNumber.addActionListener(new ActionListener() {
+           public void actionPerformed(ActionEvent e) {
+               int num = subnetNumber.getSelectedIndex();
+               network.setText(IP_addressing.networkFinal.get(num));
+               firstIP.setText(IP_addressing.firstIPFinal.get(subnetNumber.getSelectedIndex()));
+               lastIP.setText(IP_addressing.lastIPFinal.get(subnetNumber.getSelectedIndex()));
+               broadcast.setText(IP_addressing.broadcastFinal.get(subnetNumber.getSelectedIndex()));
+               subnetMask.setText(String.valueOf(IP_addressing.subnetMask.get(subnetNumber.getSelectedIndex())));
+           }
+       });
+       subnetNumber.setEditable(true);
+       subnetNumber.setMaximumRowCount(20);
+       subnetNumber.setBounds(45, 60, 50, 25);
+       frame.getContentPane().add(subnetNumber);
+
+       network = new JTextField();
+       network.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       network.setBounds(150, 60, 120, 25);
+       frame.getContentPane().add(network);
+       network.setColumns(10);
+
+       firstIP = new JTextField();
+       firstIP.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       firstIP.setBounds(300, 60, 120, 25);
+       frame.getContentPane().add(firstIP);
+       firstIP.setColumns(10);
+
+       lastIP = new JTextField();
+       lastIP.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       lastIP.setBounds(450, 60, 120, 25);
+       frame.getContentPane().add(lastIP);
+       lastIP.setColumns(10);
+
+       broadcast = new JTextField();
+       broadcast.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       broadcast.setBounds(600, 60, 120, 25);
+       frame.getContentPane().add(broadcast);
+       broadcast.setColumns(10);
+
+       subnetMask = new JTextField();
+       subnetMask.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       subnetMask.setBounds(780, 60, 60, 25);
+       frame.getContentPane().add(subnetMask);
+       subnetMask.setColumns(10);
+
+       JLabel lblNewLabel = new JLabel("Subnet Number");
+       lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+       lblNewLabel.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       lblNewLabel.setBounds(20, 30, 100, 25);
+       frame.getContentPane().add(lblNewLabel);
+
+       JLabel lblNewLabel_1 = new JLabel("Network Address");
+       lblNewLabel_1.setHorizontalAlignment(SwingConstants.CENTER);
+       lblNewLabel_1.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       lblNewLabel_1.setBounds(150, 30, 120, 25);
+       frame.getContentPane().add(lblNewLabel_1);
+
+       JLabel lblNewLabel_2 = new JLabel("First IP Address");
+       lblNewLabel_2.setHorizontalAlignment(SwingConstants.CENTER);
+       lblNewLabel_2.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       lblNewLabel_2.setBounds(300, 30, 120, 25);
+       frame.getContentPane().add(lblNewLabel_2);
+
+       JLabel lblNewLabel_3 = new JLabel("Last IP Address");
+       lblNewLabel_3.setHorizontalAlignment(SwingConstants.CENTER);
+       lblNewLabel_3.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       lblNewLabel_3.setBounds(450, 30, 120, 25);
+       frame.getContentPane().add(lblNewLabel_3);
+
+       JLabel lblNewLabel_4 = new JLabel("Broadcast Address");
+       lblNewLabel_4.setHorizontalAlignment(SwingConstants.CENTER);
+       lblNewLabel_4.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       lblNewLabel_4.setBounds(600, 30, 120, 25);
+       frame.getContentPane().add(lblNewLabel_4);
+
+       JLabel lblNewLabel_5 = new JLabel("Subnet Mask");
+       lblNewLabel_5.setHorizontalAlignment(SwingConstants.CENTER);
+       lblNewLabel_5.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+       lblNewLabel_5.setBounds(750, 30, 120, 25);
+       frame.getContentPane().add(lblNewLabel_5);
+   }
+
+}
+
